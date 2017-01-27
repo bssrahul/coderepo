@@ -14,9 +14,10 @@ module.exports = function(app, express) {
       router.get('/checkUniqueEmail', routeObj.checkUniqueEmail);
       router.get('/checkUniqueMobile', routeObj.checkUniqueMobile);
 
-     router.get('/admininstrator/', routeObj.admin_login_form);
-     router.get('/auth/register-admin/', routeObj.admin_register_form);
-     router.post('/admin/login/', routeObj.admin_login);
+      router.get('/admininstrator/', routeObj.admin_login_form);
+      router.post('/admin/login/', routeObj.admin_login);
+      router.get('/register-admin/', routeObj.admin_register_form);
+      router.post('/admin/regsiter/', routeObj.admin_register);
 
       app.use('/auth', router);
 }
