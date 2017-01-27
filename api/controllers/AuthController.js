@@ -349,37 +349,50 @@ module.exports = {
      | Function    : login
      | Description : use to login user
      |--------------------------------------------------------------------------*/
+    admin_login_form: function (req, res) {
+        res.render('admin/guest/login', { users: 'hello' }); 	
+    },
+    admin_register_form: function (req, res) {
+        res.send('mil gya');
+       // res.render('admin/guest/register', { users: 'hello' }); 	
+    },
+    
+
      admin_login: function (req, res) {
-          var email = req.body.email;
+         var email = req.body.email;
 
           var password = req.body.password;
 
+          if (!password && !email) {
+               res.render('admin/guest/login', {resStatus:'error', msg :'Email / Password is required'}); 	
+          }
           if (!password) {
-               return res.json({resStatus:'error', msg :'Password is required'});
+               res.render('admin/guest/login', {resStatus:'error', msg :'Password is Required'});
           }
 
           if (!email) {
-               return res.json({resStatus:'error', msg :'Email is Required'});
+               res.render('admin/guest/login', {resStatus:'error', msg :'Email is Required'});
           }
 
           UserModel.findOne({role : 'ADMIN', status:true, otp:'', isDeleted:false,email:email},{},function(err, user) {
                if (!user) {
-                    return res.json({resStatus:'error', msg :'Invalid Email', fieldEmpty:"email_pass"});
+                   res.render('admin/guest/login', {resStatus:'error', msg :'Invalid Email/Password'});
                }
                UserModelObj.comparePassword(password, user,  function(err, valid) {
                     if (err) {
-                         return res.json({resStatus:'error', msg : AppMessages.SERVER_ERR});
+                         res.render('admin/guest/login', {resStatus:'error', msg : AppMessages.SERVER_ERR});
                     }
 
                     if (!valid) {
-                         return res.json( {resStatus:'error', msg :'Password is incorrect', fieldEmpty:"password"});
+                         res.render('admin/guest/login', {resStatus:'error', msg : 'Password is incorrect'});
                     } else {
-                         return res.json({resStatus:'success', msg :AppMessages.LOGIN,  token: JwtService.issueToken(user._id),result: user});
+                         
+                         res.render('admin/guest/login', {resStatus:'success', msg : AppMessages.LOGIN,token: JwtService.issueToken(user._id),result: user});
                     }
                });
           })
-          res.send('ok');
-        // res.render('./admin/guest/register', { users: data }); 	
+         // res.send('ok');
+        	
      },
 
 }

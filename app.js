@@ -16,8 +16,9 @@ var app = express();
 
 //process.env['NODE_ENV'] = process.env['NODE_ENV'] || 'local';
 
-var io = require('socket.io')();
+/*var io = require('socket.io')();
 app.io = io;
+*/
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
