@@ -349,37 +349,120 @@ module.exports = {
      | Function    : login
      | Description : use to login user
      |--------------------------------------------------------------------------*/
+    admin_login_form: function (req, res) {
+        
+        res.render('admin/guest/login', { resStatus: 'hello' }); 	
+    },
+    admin_register_form: function (req, res) {
+      
+       res.render('admin/guest/register', { resStatus: 'hello' }); 	
+    },
+    
+    admin_register: function(req,res){
+
+          req.body.name = req.body.name || {};
+          if (req.body.isMobile == 'true') {
+               req.body.name = {first : req.body.firstName , last : req.body.lastName};
+          }
+
+          if (!req.body.name.first || !req.body.name.last || !req.body.email || !req.body.password) {
+               res.render('admin/guest/register', {resStatus:'error', msg :'Please fill all required fields'});
+          }
+
+          CommonService.isEmailExist(req.body.email, UserModel, function (emailStatus) {
+               if (emailStatus === false) {
+                    let OTP = CommonService.generateOtp(6);
+                    let TOKEN = CommonService.generateOtp(6);
+                    req.body.otp = OTP;
+                    req.body.token = TOKEN;
+                    req.body.platform = req.body.platform || 'WEB';
+                    req.body.deviceToken = req.body.deviceToken || '';
+                    UserModel(req.body).save(function(err,resData){
+                         if (err) return res.json({resStatus:'error', msg : AppMessages.SERVER_ERR});
+                         let template = AppConstants.REGISTERATION_TEMPLATE;
+                         template = template.replace("{{USERNAME}}", resData.fullname);
+                         //template = template.replace("{{OTP}}", OTP);
+                         template = template.replace("{{TOKEN}}", resData.token);
+                         template = template.replace("{{ID}}", resData._id);
+                         let mailOptions = {
+                              from: AppConstants.EMAIL,
+                              to: [req.body.email],
+                              subject: "New Account Registration",
+                              html: template
+                         }
+                         EmailService.send(mailOptions,function(err, response){
+                              if(err) {
+                                   console.log("Email Not Sent");
+                              } else {
+                                   console.log("Email Sent Succesfully");
+                              }
+                         });
+                         // UserModel.update({_id : resData._id },{isLogin : true},{upsert : false}, function(err, updateStatus) {
+                         //      console.log("User logged into the application");
+                         // });
+                         //return res.json({resStatus:'success', msg :AppMessages.REGISTER_TOKEN, result : resData._id});
+                         res.render('admin/guest/register', {resStatus:'success', msg :AppMessages.LOGIN,  token: JwtService.issueToken(resData._id,req.body.platform, req.body.deviceToken ),result: resData});
+                         /*** code for sending sms OTP **/
+                         /**
+                         var smsOptions = {
+                              user: "rroxysam@gmail.com:myData@28",
+                              receipient: mobile,
+                              msg : "This is test message",
+                              SENDER : AppConstants.TWILIO.SENDER,
+                              SID : AppConstants.TWILIO.SID,
+                              TOKEN : AppConstants.TWILIO.AUTHTOKEN
+                         };
+                         SmsService.send (smsOptions, function (err, response) {
+                             if(err) {
+                                 console.log("Some Error Occured While Sending Twilio Sms");
+                             } else {
+                                 console.log("Sms has been Sent");
+                             }
+                        }); */
+                         /*** code for sending email OTP   **/
+                    });
+               } else {
+                   res.render('admin/guest/register', {resStatus:'error', msg :AppMessages.DUPLICATE_ACCOUNT});
+                    
+               }
+          });
+    },
+
      admin_login: function (req, res) {
-          var email = req.body.email;
+         var email = req.body.email;
 
           var password = req.body.password;
 
+          if (!password && !email) {
+               res.render('admin/guest/login', {resStatus:'error', msg :'Email / Password is required'}); 	
+          }
           if (!password) {
-               return res.json({resStatus:'error', msg :'Password is required'});
+               res.render('admin/guest/login', {resStatus:'error', msg :'Password is Required'});
           }
 
           if (!email) {
-               return res.json({resStatus:'error', msg :'Email is Required'});
+               res.render('admin/guest/login', {resStatus:'error', msg :'Email is Required'});
           }
 
           UserModel.findOne({role : 'ADMIN', status:true, otp:'', isDeleted:false,email:email},{},function(err, user) {
                if (!user) {
-                    return res.json({resStatus:'error', msg :'Invalid Email', fieldEmpty:"email_pass"});
+                   res.render('admin/guest/login', {resStatus:'error', msg :'Invalid Email/Password'});
                }
                UserModelObj.comparePassword(password, user,  function(err, valid) {
                     if (err) {
-                         return res.json({resStatus:'error', msg : AppMessages.SERVER_ERR});
+                         res.render('admin/guest/login', {resStatus:'error', msg : AppMessages.SERVER_ERR});
                     }
 
                     if (!valid) {
-                         return res.json( {resStatus:'error', msg :'Password is incorrect', fieldEmpty:"password"});
+                         res.render('admin/guest/login', {resStatus:'error', msg : 'Password is incorrect'});
                     } else {
-                         return res.json({resStatus:'success', msg :AppMessages.LOGIN,  token: JwtService.issueToken(user._id),result: user});
+                         
+                         res.render('admin/guest/login', {resStatus:'success', msg : AppMessages.LOGIN,token: JwtService.issueToken(user._id),result: user});
                     }
                });
           })
-          res.send('ok');
-        // res.render('./admin/guest/register', { users: data }); 	
+         // res.send('ok');
+        	
      },
 
 }
